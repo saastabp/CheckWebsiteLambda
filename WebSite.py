@@ -8,59 +8,106 @@ logger.setLevel(logging.INFO)
 
 
 class WebSite:
+    """
+    This class represents the state of a website given by its URL.
+
+    Represents the state of a website given by its URL.  The last known state may
+    be compared to the current state to detect changes in its availability.
+
+    All attributes except the URL are optional.  They are set by the checkWebsite method.
+    """
 
     def __init__(self, site_obj: dict):
-        self.url = site_obj.get('url', None)
-        self.http_status = site_obj.get('http_status', None)
-        self.http_reason = site_obj.get('http_reason', None)
-        self.last_checked = site_obj.get('last_checked', None)
-        self.last_changed = site_obj.get('last_changed', None)
-        self.is_changed = False
-        self.is_up = site_obj.get('is_up', False)
-        self.is_slow = site_obj.get('is_slow', False)
+        self._url = site_obj.get('url', site_obj.get('_url', None))
+        self._http_status = site_obj.get('http_status', site_obj.get('_http_status', None))
+        self._http_reason = site_obj.get('http_reason', site_obj.get('_http_reason', None))
+        self._last_checked = site_obj.get('last_checked', site_obj.get('_last_checked', None))
+        self._last_changed = site_obj.get('last_changed', site_obj.get('_last_changed', None))
+        self._elapsed_time = site_obj.get('elapsed_time', site_obj.get('_elapsed_time', None))
+        self._is_changed = False
+        self._is_up = site_obj.get('is_up', site_obj.get('_is_up', False))
+        self._is_slow = site_obj.get('is_slow', site_obj.get('_is_slow', False))
 
-    def get_url(self):
-        """
-        Get the URL of the website
-        Returns
-        -------
-        String: the URL of the website
-        """
-        return self.url
+    @property
+    def url(self):
+        return self._url
 
-    def get_http_status(self):
-        return self.http_status
+    @property
+    def http_status(self):
+        return self._http_status
 
-    def get_http_reason(self):
-        return self.http_reason
+    @http_status.setter
+    def http_status(self, http_status):
+        self._http_status = http_status
 
-    def get_last_changed(self):
-        return self.last_changed
+    @property
+    def http_reason(self):
+        return self._http_reason
 
-    def set_last_changed(self, last_changed: datetime):
-        if last_changed is not None:
-            self.last_changed = last_changed.isoformat()
-        else:
-            self.last_changed = None
+    @http_reason.setter
+    def http_reason(self, http_reason):
+        self._http_reason = http_reason
 
-    def get_last_checked(self):
-        return self.last_checked
+    @property
+    def last_checked(self):
+        return self._last_checked
 
-    def set_last_checked(self, last_checked: datetime):
+    @last_checked.setter
+    def last_checked(self, last_checked: datetime):
         if last_checked is not None:
-            self.last_checked = last_checked.isoformat()
+            self._last_checked = last_checked.isoformat()
         else:
-            self.last_checked = None
+            self._last_checked = None
 
-    def get_is_changed(self):
-        return self.is_changed
+    @property
+    def last_changed(self):
+        return self._last_changed
+
+    @last_changed.setter
+    def last_changed(self, last_changed: datetime):
+        if last_changed is not None:
+            self._last_changed = last_changed.isoformat()
+        else:
+            self._last_changed = None
+
+    @property
+    def elapsed_time(self):
+        return self._elapsed_time
+
+    @elapsed_time.setter
+    def elapsed_time(self, elapsed_time):
+        self._elapsed_time = elapsed_time
+
+    @property
+    def is_changed(self):
+        return self._is_changed
+
+    @is_changed.setter
+    def is_changed(self, is_changed):
+        self._is_changed = is_changed
+
+    @property
+    def is_up(self):
+        return self._is_up
+
+    @is_up.setter
+    def is_up(self, is_up):
+        self._is_up = is_up
+
+    @property
+    def is_slow(self):
+        return self._is_slow
+
+    @is_slow.setter
+    def is_slow(self, is_slow):
+        self._is_slow = is_slow
 
     def check_website(self, **kwargs):
         slow_response_threshold = kwargs.get('SlowResponseSeconds', 5)
         current = WebSite(self.__dict__)
         try:
             start_time = datetime.now()
-            u = urllib.request.urlopen(self.url)
+            u = urllib.request.urlopen(self._url)
             response_time = datetime.now() - start_time
             current.http_status = u.status
             current.http_reason = u.reason if u.reason else "OK"
@@ -79,10 +126,25 @@ class WebSite:
             current.http_status = "N/A"
             current.http_reason = f"{str(ue)}"
 
-        if current.http_status != self.http_status:
-            current.set_last_changed(datetime.now(timezone.utc))
+        if current.http_status != self._http_status:
+            current.last_changed = datetime.now(timezone.utc)
             current.is_changed = True
 
-        current.set_last_checked(datetime.now(timezone.utc))
+        current.last_checked = datetime.now(timezone.utc)
 
-        return current
+        return current.to_dict()
+
+    def to_dict(self):
+        new_dict = dict()
+
+        new_dict['url'] = self._url
+        new_dict['http_status'] = self._http_status
+        new_dict['http_reason'] = self._http_reason
+        new_dict['is_changed'] = self._is_changed
+        new_dict['last_checked'] = self._last_checked
+        new_dict['last_changed'] = self._last_changed
+        new_dict['elapsed_time'] = self._elapsed_time
+        new_dict['is_up'] = self._is_up
+        new_dict['is_slow'] = self._is_slow
+
+        return new_dict

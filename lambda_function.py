@@ -12,8 +12,8 @@ logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     # input from SQS queue
-    content = event['Records'][0]['body'];
-    urls = json.loads(content).get('urls');
+    content = event['Records'][0]['body']
+    urls = json.loads(content).get('urls')
 
     # Initialize the DynamoDB client
     dynamodb = boto3.resource('dynamodb')
@@ -27,12 +27,14 @@ def lambda_handler(event, context):
             try:
                 item = websites_tbl.get_item(Key={'url': url})['Item']
                 web_site = WebSite(item)
-                logger.info(f"Checking website '{web_site.get_url()}'")
-                updated_site = web_site.check_website(SlowResponseSeconds=int(response_limit))
-                if updated_site.get_is_changed():
+                logger.info(f"Checking website '{web_site.url}'")
+                updated_site_dict = web_site.check_website(SlowResponseSeconds=int(response_limit))
+                updated_site = WebSite(updated_site_dict)
+
+                if updated_site.is_changed:
                     changed_sites.append(updated_site)
 
-                websites_tbl.put_item(Item=updated_site.__dict__)
+                websites_tbl.put_item(Item=updated_site_dict)
             except Exception as e:
                 logger.error(f"Unable to process url {url}:{str(e)}")
 
@@ -54,18 +56,18 @@ def publish_changes(changed_sites):
     topic_arn = os.environ['SNS_TOPIC']
     status_url = os.environ['STATUS_PAGE_URL']
     topic_name = topic_arn.split(':')[-1]
-    
+
     if len(changed_sites) > 0:
         logger.info(f"Publishing changes to topic '{topic_name}'")
         try:
             sns = boto3.client('sns')
             msg = "The following websites are reporting a status change:\n\n"
             for site in changed_sites:
-                msg += f"{site.get_url()}: status: {site.get_http_status()} - {site.get_http_reason()}\n"
-    
+                msg += f"{site.url}: status: {site.http_status} - {site.http_reason}\n"
+
             msg += f"\nYou can view the full website status here: {status_url}"
-            
+
             sns.publish(TopicArn=topic_arn, Subject='Notification of Website Status Change', Message=msg)
-    
+
         except Exception as e:
             logger.error(f"Failed publishing change website notifications to {topic_name}: {str(e)}")
