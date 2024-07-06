@@ -126,7 +126,7 @@ class WebSite:
             current.http_status = "N/A"
             current.http_reason = f"{str(ue)}"
 
-        if current.http_status != self._http_status:
+        if current.http_status != self._http_status or current.is_slow != self._is_slow:
             current.last_changed = datetime.now(timezone.utc)
             current.is_changed = True
 
