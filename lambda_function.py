@@ -11,6 +11,24 @@ logger.setLevel(logging.INFO)
 
 
 def lambda_handler(event, context):
+    """
+    Check the status of a list of websites.  The current state is recorded to
+    a dynamodb table.  For any websites where the reachable/unreachable state
+    has changed since the last time it was checked, post the URL to an SQS queue.
+
+    Parameters
+    ----------
+    event: dict
+        The event payload.
+    context : dict
+        The context payload.
+
+    Returns
+    -------
+    string:
+        A json string containing the http status of the lambda call.
+    """
+
     # input from SQS queue
     content = event['Records'][0]['body']
     urls = json.loads(content).get('urls')
@@ -52,7 +70,19 @@ def lambda_handler(event, context):
     }
 
 
-def publish_changes(changed_sites):
+def publish_changes(changed_sites: list):
+    """
+    Publish the changed sites to the SQS queue.
+
+    Parameters
+    ----------
+    changed_sites: list
+        A list of website dictionary objects
+
+    Returns
+    -------
+        None
+    """
     topic_arn = os.environ['SNS_TOPIC']
     status_url = os.environ['STATUS_PAGE_URL']
     topic_name = topic_arn.split(':')[-1]
@@ -71,3 +101,4 @@ def publish_changes(changed_sites):
 
         except Exception as e:
             logger.error(f"Failed publishing change website notifications to {topic_name}: {str(e)}")
+
