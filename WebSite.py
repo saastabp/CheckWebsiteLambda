@@ -2,6 +2,7 @@ import urllib.request
 import logging
 from datetime import datetime, timezone
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -19,14 +20,19 @@ class WebSite:
 
     def __init__(self, site_obj: dict):
         self._url = site_obj.get('url', site_obj.get('_url', None))
-        self._http_status = site_obj.get('http_status', site_obj.get('_http_status', None))
-        self._http_reason = site_obj.get('http_reason', site_obj.get('_http_reason', None))
-        self._last_checked = site_obj.get('last_checked', site_obj.get('_last_checked', None))
-        self._last_changed = site_obj.get('last_changed', site_obj.get('_last_changed', None))
-        self._elapsed_time = site_obj.get('elapsed_time', site_obj.get('_elapsed_time', None))
-        self._is_changed = False
-        self._is_up = site_obj.get('is_up', site_obj.get('_is_up', False))
-        self._is_slow = site_obj.get('is_slow', site_obj.get('_is_slow', False))
+        result = urlparse(self._url)
+        if result.scheme and result.netloc:
+            self._http_status = site_obj.get('http_status', site_obj.get('_http_status', None))
+            self._http_reason = site_obj.get('http_reason', site_obj.get('_http_reason', None))
+            self._last_checked = site_obj.get('last_checked', site_obj.get('_last_checked', None))
+            self._last_changed = site_obj.get('last_changed', site_obj.get('_last_changed', None))
+            self._elapsed_time = site_obj.get('elapsed_time', site_obj.get('_elapsed_time', None))
+            self._is_changed = False
+            self._is_up = site_obj.get('is_up', site_obj.get('_is_up', False))
+            self._is_slow = site_obj.get('is_slow', site_obj.get('_is_slow', False))
+        else:
+            raise ValueError(f'Invalid URL provided: {self._url}')
+
 
     @property
     def url(self):
