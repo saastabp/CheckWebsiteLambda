@@ -44,7 +44,6 @@ class WebSite:
         else:
             raise ValueError(f'Invalid URL provided: {self._url}')
 
-
     @property
     def url(self):
         return self._url
@@ -122,7 +121,7 @@ class WebSite:
     def check_website(self, **kwargs):
         """
         Verify that the website is reachable and performant.  The method tries
-        to open the url.  Anything other than an http status of 200 is considered
+        to open the url.  Anything other than a http status of 200 is considered
         down.  Additionally, if the website does not respond in a prescribed amount
         of time, it is marked as 'slow'.
 
