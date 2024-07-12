@@ -16,6 +16,17 @@ class WebSite:
     be compared to the current state to detect changes in its availability.
 
     All attributes except the URL are optional.  They are set by the checkWebsite method.
+
+    Parameters
+    ----------
+    site_obj: dict
+        A dictionary representing the current site.  This must contain at a minimum
+        a 'url' entry providing the URL of the site.  All other values are optional
+
+    Raises
+    ------
+    ValueError
+        If the URL is invalid.
     """
 
     def __init__(self, site_obj: dict):
@@ -109,6 +120,24 @@ class WebSite:
         self._is_slow = is_slow
 
     def check_website(self, **kwargs):
+        """
+        Verify that the website is reachable and performant.  The method tries
+        to open the url.  Anything other than an http status of 200 is considered
+        down.  Additionally, if the website does not respond in a prescribed amount
+        of time, it is marked as 'slow'.
+
+        Parameters
+        ----------
+        **kwargs: dict, optional
+            The optional 'SlowResponseSeconds' may be provided to specify the maximum
+            number of seconds it takes for the site to be considered performant.  The
+            site is considered slow if the response time exceeds this value.
+            The default value is '5' seconds if this keyword is not provided.
+
+        Returns
+        -------
+
+        """
         slow_response_threshold = kwargs.get('SlowResponseSeconds', 5)
         current = WebSite(self.__dict__)
         try:
@@ -141,6 +170,16 @@ class WebSite:
         return current.to_dict()
 
     def to_dict(self):
+        """
+        Converts the object to a dictionary with normalized keys.  The internal keys are
+        prepended with an '_' char.  This simplifies the process of reading/writing to a
+        database by providing a dict whose keys do not have the '_' char.
+
+        Returns
+        -------
+        dict
+            A dictionary with normalized keys.
+        """
         new_dict = dict()
 
         new_dict['url'] = self._url
