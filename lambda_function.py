@@ -9,6 +9,8 @@ from WebSite import WebSite
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# Initialize the DynamoDB client
+dynamodb = boto3.resource('dynamodb')
 
 def lambda_handler(event, context):
     """
@@ -33,8 +35,6 @@ def lambda_handler(event, context):
     content = event['Records'][0]['body']
     urls = json.loads(content).get('urls')
 
-    # Initialize the DynamoDB client
-    dynamodb = boto3.resource('dynamodb')
     tbl_name = os.environ['TABLE_NAME']
     websites_tbl = dynamodb.Table(tbl_name)
     changed_sites = []
